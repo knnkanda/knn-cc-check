@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KNN CC Check ｜ Claude Code 習熟度診断</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --knn-text:#ffffff;
+  --knn-sub:rgba(255,255,255,0.72);
+  --knn-card:rgba(255,255,255,0.13);
+  --knn-card-strong:rgba(255,255,255,0.20);
+  --knn-border:rgba(255,255,255,0.28);
+  --knn-accent:#ffd9ec;
+  --knn-purple:#7e22ce;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+@keyframes knnGradientShift{
+  0%{background-position:0% 30%;}
+  50%{background-position:100% 70%;}
+  100%{background-position:0% 30%;}
+}
+body{
+  font-family:'Noto Sans JP',system-ui,sans-serif;
+  background:linear-gradient(135deg,#6d28d9 0%,#9333ea 25%,#c026d3 50%,#db2777 75%,#a855f7 100%);
+  background-size:220% 220%;
+  animation:knnGradientShift 18s ease-in-out infinite;
+  background-attachment:fixed;
+  color:var(--knn-text);
+  min-height:100vh;
+  display:flex;justify-content:center;
+  padding:20px 12px 60px;
+}
+.app{width:100%;max-width:430px;}
+.shell{
+  background:var(--knn-card);
+  border:1px solid var(--knn-border);
+  border-radius:28px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 20px 50px rgba(120,40,140,0.35);
+  padding:22px 18px;
+}
+header.hd{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.badge{
+  width:42px;height:42px;border-radius:999px;
+  background:rgba(255,255,255,0.9);color:var(--knn-purple);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
+}
+.hd h1{font-size:17px;font-weight:700;line-height:1.3;}
+.hd .date{font-size:11px;color:var(--knn-sub);letter-spacing:.06em;}
+.lead{font-size:12.5px;color:var(--knn-sub);line-height:1.75;margin:14px 0 18px;}
+.field{margin-bottom:14px;}
+label.lb{display:block;font-size:12px;color:var(--knn-sub);margin-bottom:6px;}
+input[type=text]{
+  width:100%;padding:12px 16px;border-radius:999px;
+  border:1px solid var(--knn-border);background:rgba(255,255,255,0.12);
+  color:#fff;font-size:15px;font-family:inherit;outline:none;
+}
+input[type=text]::placeholder{color:rgba(255,255,255,0.45);}
+input[type=text]:focus{border-color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.18);}
+.pillrow{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{
+  flex:1 1 auto;padding:9px 10px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--knn-border);background:transparent;color:#fff;
+  font-size:12px;font-family:inherit;text-align:center;transition:.15s;
+}
+.pill:hover{background:rgba(255,255,255,0.14);}
+.pill.on{background:rgba(255,255,255,0.92);color:var(--knn-purple);font-weight:700;border-color:transparent;}
+.btn{
+  width:100%;padding:14px;border-radius:999px;border:none;cursor:pointer;
+  background:rgba(255,255,255,0.92);color:var(--knn-purple);
+  font-size:15px;font-weight:700;font-family:inherit;transition:.15s;
+}
+.btn:hover{background:#fff;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.ghost{background:transparent;border:1px solid var(--knn-border);color:#fff;font-weight:500;}
+.btn.ghost:hover{background:rgba(255,255,255,0.14);}
+.btnrow{display:flex;gap:8px;margin-top:14px;}
+.prog{height:5px;border-radius:999px;background:rgba(255,255,255,0.18);overflow:hidden;margin:4px 0 18px;}
+.prog i{display:block;height:100%;background:var(--knn-accent);transition:width .3s;}
+.qmeta{font-size:11px;color:var(--knn-sub);letter-spacing:.08em;margin-bottom:6px;}
+.qtitle{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:4px;}
+.qdesc{font-size:12px;color:var(--knn-sub);line-height:1.7;margin-bottom:16px;}
+.axis{
+  background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.18);
+  border-radius:18px;padding:13px;margin-bottom:10px;
+}
+.axis h3{font-size:12.5px;font-weight:700;margin-bottom:9px;color:var(--knn-accent);}
+.opts{display:flex;flex-direction:column;gap:6px;}
+.opt{
+  padding:10px 14px;border-radius:999px;cursor:pointer;font-size:12.5px;
+  border:1px solid var(--knn-border);background:transparent;color:#fff;
+  font-family:inherit;text-align:left;transition:.15s;
+}
+.opt:hover{background:rgba(255,255,255,0.14);}
+.opt.on{background:rgba(255,255,255,0.92);color:var(--knn-purple);font-weight:700;border-color:transparent;}
+.res-hero{text-align:center;padding:6px 0 14px;}
+.res-lv{font-size:34px;font-weight:700;letter-spacing:.02em;}
+.res-lvname{font-size:15px;color:var(--knn-accent);font-weight:700;margin-top:2px;}
+.res-score{font-size:12px;color:var(--knn-sub);margin-top:8px;}
+.kpis{display:flex;gap:8px;margin:14px 0;}
+.kpi{flex:1;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.2);
+  border-radius:18px;padding:12px 8px;text-align:center;}
+.kpi b{display:block;font-size:22px;font-weight:700;}
+.kpi span{font-size:10.5px;color:var(--knn-sub);}
+.sec{margin-top:20px;}
+.sec h2{font-size:13px;font-weight:700;color:var(--knn-accent);margin-bottom:10px;letter-spacing:.04em;}
+.task{
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.2);
+  border-radius:18px;padding:14px;margin-bottom:10px;
+}
+.task h4{font-size:13.5px;font-weight:700;line-height:1.5;margin-bottom:4px;}
+.task .why{font-size:11.5px;color:var(--knn-accent);margin-bottom:8px;line-height:1.6;}
+.task ol{margin:0;padding-left:18px;}
+.task li{font-size:12px;color:var(--knn-sub);line-height:1.85;margin-bottom:2px;}
+.type-box{
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.2);
+  border-radius:18px;padding:14px;font-size:12.5px;line-height:1.8;color:var(--knn-sub);
+}
+.type-box b{color:#fff;}
+.note{font-size:11px;color:var(--knn-sub);line-height:1.7;margin-top:10px;}
+.status{font-size:12px;text-align:center;margin-top:10px;min-height:18px;color:var(--knn-accent);}
+svg.radar{width:100%;height:auto;display:block;}
+.legend{display:flex;justify-content:center;gap:14px;font-size:11px;color:var(--knn-sub);margin-top:4px;}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;}
+textarea.tsv{
+  width:100%;height:64px;border-radius:14px;padding:10px;font-size:10px;
+  border:1px solid var(--knn-border);background:rgba(0,0,0,0.18);color:#fff;
+  font-family:ui-monospace,monospace;resize:vertical;
+}
+footer.ft{text-align:center;font-size:10.5px;color:rgba(255,255,255,0.5);margin-top:18px;line-height:1.8;}
+.hide{display:none;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="shell">
+    <header class="hd">
+      <div class="badge">🧠</div>
+      <div>
+        <h1>KNN CC Check</h1>
+        <div class="date">Claude Code 習熟度診断 v1.0</div>
+      </div>
+    </header>
+
+    <!-- ===== 1. START ===== -->
+    <section id="scStart">
+      <p class="lead">
+        Claude Code と AI 駆動開発の習熟度を、<b>『知識』と『実践』の2軸</b>で測ります。<br>
+        全10問・所要 約4分。氏名は不要です。受講番号だけ入力してください。
+      </p>
+      <div class="field">
+        <label class="lb">受講番号（任意の数字・英字／講師の指示に従ってください）</label>
+        <input type="text" id="pid" placeholder="例：A12" maxlength="12" autocomplete="off">
+      </div>
+      <div class="field">
+        <label class="lb">受検タイミング</label>
+        <div class="pillrow" id="phaseRow">
+          <button class="pill on" data-v="pre">研修前</button>
+          <button class="pill" data-v="post">研修後</button>
+          <button class="pill" data-v="follow">1か月後</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lb">職種（集計の分類用）</label>
+        <div class="pillrow" id="roleRow">
+          <button class="pill on" data-v="企画営業">企画・営業</button>
+          <button class="pill" data-v="管理部門">管理部門</button>
+          <button class="pill" data-v="経営">経営</button>
+          <button class="pill" data-v="技術">技術</button>
+        </div>
+      </div>
+      <button class="btn" id="btnStart">診断をはじめる</button>
+      <p class="note">回答は受講番号のみで匿名集計され、研修のレベル分けとグループ分けに使われます。</p>
+    </section>
+
+    <!-- ===== 2. QUIZ ===== -->
+    <section id="scQuiz" class="hide">
+      <div class="prog"><i id="progBar" style="width:0%"></i></div>
+      <div class="qmeta" id="qMeta"></div>
+      <div class="qtitle" id="qTitle"></div>
+      <div class="qdesc" id="qDesc"></div>
+
+      <div class="axis">
+        <h3>① 知っている度（Knowledge）</h3>
+        <div class="opts" id="optK"></div>
+      </div>
+      <div class="axis">
+        <h3>② やったことがある度（Practice）</h3>
+        <div class="opts" id="optD"></div>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn ghost" id="btnPrev" style="flex:0 0 34%">戻る</button>
+        <button class="btn" id="btnNext" disabled>次へ</button>
+      </div>
+    </section>
+
+    <!-- ===== 3. RESULT ===== -->
+    <section id="scResult" class="hide">
+      <div class="res-hero">
+        <div class="res-lv" id="resLv">LV.2</div>
+        <div class="res-lvname" id="resLvName"></div>
+        <div class="res-score" id="resScore"></div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><b id="kpiK">0</b><span>知識 / 30</span></div>
+        <div class="kpi"><b id="kpiD">0</b><span>実践 / 30</span></div>
+        <div class="kpi"><b id="kpiG">0</b><span>差（知識-実践）</span></div>
+      </div>
+
+      <div class="sec">
+        <h2>10領域マップ</h2>
+        <svg class="radar" id="radar" viewBox="0 0 320 300" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="legend">
+          <span><i style="background:rgba(255,255,255,.85)"></i>知識</span>
+          <span><i style="background:#ffd9ec"></i>実践</span>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>あなたのタイプ</h2>
+        <div class="type-box" id="typeBox"></div>
+      </div>
+
+      <div class="sec">
+        <h2>次にやる課題（3つ）</h2>
+        <div id="taskList"></div>
+      </div>
+
+      <div class="sec">
+        <h2>集計へ送信</h2>
+        <button class="btn" id="btnSend">スプレッドシートに送信</button>
+        <div class="status" id="sendStatus"></div>
+        <div class="btnrow">
+          <button class="btn ghost" id="btnCopy">1行コピー</button>
+          <button class="btn ghost" id="btnCsv">CSV保存</button>
+        </div>
+        <p class="note">送信が使えない環境では『1行コピー』を押し、講師のスプレッドシートに貼り付けてください（タブ区切りで各セルに入ります）。</p>
+        <textarea class="tsv" id="tsvBox" readonly></textarea>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn ghost" id="btnRetry">もう一度</button>
+      </div>
+    </section>
+
+    <footer class="ft">
+      KNN CC Check ／ KandaNewsNetwork, Inc.<br>
+      <span id="stamp"></span>
+    </footer>
+  </div>
+</div>
+
+<script>
+/* ===========================================================
+   KNN CC Check ー Claude Code 習熟度診断
+   単一HTML。外部依存なし（フォントのみCDN）。
+   GAS_URL を設定するとスプレッドシートへ直接送信されます。
+   =========================================================== */
+
+const GAS_URL = ""; // ← Apps Script のウェブアプリURLをここに貼る
+
+/* ---------- 設問データ ---------- */
+const KLABEL = [
+  "聞いたことがない",
+  "言葉は聞いたことがある",
+  "人に説明できる",
+  "人に教えられる／判断基準を持っている"
+];
+const DLABEL = [
+  "やったことがない",
+  "誰かがやるのを見た／手伝ってもらった",
+  "自分ひとりで最後までやった",
+  "業務で繰り返し使っている"
+];
+
+const QUESTIONS = [
+  { ax:"ターミナル",  t:"ターミナル（CLI）の基本操作",
+    d:"黒い画面で cd（フォルダ移動）・ls（一覧表示）・mkdir（フォルダ作成）を使い、いま自分がどこにいるかを把握できる。Claude Code はこの画面の上で動きます。" },
+  { ax:"導入・起動",  t:"Claude Code の導入と起動",
+    d:"Claude Code は Anthropic のターミナル型 AI エージェント。npm でインストールし、作業フォルダで claude と打って起動します。" },
+  { ax:"CLAUDE.md",   t:"CLAUDE.md によるプロジェクト記憶",
+    d:"毎回同じ指示を打たなくて済むよう、プロジェクトのルール・用語・禁止事項を書いておく常時読み込みファイル。AI の『社内マニュアル』にあたります。" },
+  { ax:"文脈管理",    t:"文脈（コンテキスト）の管理",
+    d:"/clear で会話をリセット、/compact で圧縮、計画モードで先に段取りを確認、/rewind で前の状態に戻す。長時間作業の品質はここで決まります。" },
+  { ax:"Git/GitHub",  t:"バージョン管理（Git / GitHub）",
+    d:"変更履歴を記録し、壊れたら戻せる仕組み。commit（記録）・push（アップロード）・リポジトリ（保管庫）の3語が分かれば実務は回ります。" },
+  { ax:"Web公開",     t:"作ったものを Web に公開する",
+    d:"Vercel や GitHub Pages にデプロイ（配置）し、URL を発行して他人に触ってもらう。社内提案は『動く URL』が一番速い説得材料です。" },
+  { ax:"MCP／AI秘書", t:"MCP による外部サービス連携（AI秘書化）",
+    d:"MCP（Model Context Protocol）は AI と外部サービスをつなぐ共通規格。Gmail・Google Sheets・Drive・Notion などに接続すると、AI が『読む・書く』秘書になります。" },
+  { ax:"型化",        t:"Skills・サブエージェントによる業務の型化",
+    d:"Skill（SKILL.md）は繰り返す手順書を部品化する仕組み。サブエージェントは別の文脈で下請け作業をさせる仕組み。属人的な作業を再利用可能にします。" },
+  { ax:"自動化",      t:"Hooks・定期実行による自動化",
+    d:"Hooks は『ファイル保存後に必ず整形する』のようにイベントで確実に動く仕掛け。指示ではなく仕組みで縛るので、AI の気まぐれを排除できます。" },
+  { ax:"他社比較",    t:"他の AI エージェントとの比較・使い分け",
+    d:"OpenAI の Codex CLI／Codex アプリ、Google の Gemini CLI・Antigravity・Gemini Spark（24時間稼働の常駐エージェント）。用途別に選べるかを問います。" }
+];
+
+/* ---------- レベル定義 ---------- */
+const LEVELS = [
+  { lv:0, min:0,  max:11, name:"観測者 ｜ Observer",
+    msg:"まだ AI 駆動開発の外側にいます。最初の一歩は『黒い画面を開いて、1個フォルダを作る』ことだけです。" },
+  { lv:1, min:12, max:23, name:"体験者 ｜ Explorer",
+    msg:"触ったことはあるが、成果物が手元に残っていない段階。『URL を1本持つ』ところまで行くと景色が変わります。" },
+  { lv:2, min:24, max:35, name:"実装者 ｜ Builder",
+    msg:"自分で作って公開できる段階。次は毎回の手作業を減らし、外部データにつなぐフェーズです。" },
+  { lv:3, min:36, max:47, name:"自動化者 ｜ Operator",
+    msg:"仕組みで回し始めた段階。属人性を外し、他人に渡せる形にすると事業の資産になります。" },
+  { lv:4, min:48, max:60, name:"設計者 ｜ Architect",
+    msg:"設計と配布ができる段階。あなたの役割は作ることより、組織の標準を決めて配ることです。" }
+];
+
+/* ---------- レベル別 3課題 ---------- */
+const TASKS = {
+0:[
+ {h:"課題1：作業フォルダを1つ作る",why:"『どこに何があるか』が分かれば、AI への指示は9割通ります。",
+  s:["ターミナル（Mac は Terminal.app）を開く","pwd と打って現在地を確認する","mkdir knn-first と打ってフォルダを作る","cd knn-first で中に入る","ls と打って空であることを確認する"]},
+ {h:"課題2：Claude Code を入れて『自己紹介ページ』を1枚作らせる",why:"最初の成功体験は、コードを書かずに成果物が出ること。",
+  s:["npm install -g @anthropic-ai/claude-code でインストール","作業フォルダで claude と打って起動・ログイン","『自己紹介の1枚HTMLを index.html で作って』と日本語で指示","許可を求められたら内容を読んで承認する","open index.html でブラウザ表示"]},
+ {h:"課題3：出来たものを1箇所だけ直させる",why:"『作る』より『直す』ほうが実務では9割を占めます。",
+  s:["表示を見て、直したい箇所を1つ決める","『見出しの色を紫にして』のように場所と結果で伝える","変更後にブラウザを再読み込みして確認","直らなければ『どこを変えたか説明して』と聞く"]}
+],
+1:[
+ {h:"課題1：CLAUDE.md を書いて、指示の繰り返しをやめる",why:"毎回言っている注意は、書けば二度と言わなくて済みます。",
+  s:["作業フォルダで claude を起動","/init と打って CLAUDE.md の雛形を作らせる","『常に日本語』『鉤括弧は『』』など自分のルールを5行追記","一度 /clear してから作業させ、ルールが効くか確認"]},
+ {h:"課題2：3画面のミニアプリを作る（例：経費メモ）",why:"1画面はサンプル、3画面から『アプリ』になります。",
+  s:["入力→一覧→集計 の3画面と決めて紙に書く","『まず入力画面だけ作って』と1画面ずつ指示する","動いたら次の画面、を3回繰り返す","途中で壊れたら /rewind で前に戻す"]},
+ {h:"課題3：GitHub に上げ、Vercel で公開して URL を得る",why:"『動く URL』は、社内稟議の資料100枚より速い。",
+  s:["GitHub でリポジトリ（保管庫）を新規作成","『このフォルダを git 初期化して push して』と指示","vercel.com でリポジトリを選び Deploy を押す","発行された URL をスマホで開いて他人に見せる"]}
+],
+2:[
+ {h:"課題1：Google Sheets を MCP でつなぎ『AI秘書』にする",why:"AI が自社データを読める瞬間から、道具が業務システムに変わります。",
+  s:["claude mcp add で対象サービスを登録し認証を通す","/mcp で接続状態を確認する","『今月のシートを読んで要約して』と読み取りから試す","次に『集計行を追記して』と書き込みを試す","権限は必要な1シートだけに絞る"]},
+ {h:"課題2：自分の定型業務を Skill（SKILL.md）にする",why:"毎回貼り付けている長文プロンプトは、部品にすべき合図です。",
+  s:["毎回同じ指示をしている作業を1つ特定する","その手順を箇条書きで文章化する","『これを .claude/skills/ 配下の SKILL.md にして』と指示","新しい会話で呼び出し、同じ品質が出るか検証"]},
+ {h:"課題3：サブエージェントに調査だけ任せる",why:"調べ物の残骸で本体の会話が汚れると、精度が落ちます。",
+  s:["/agents で調査担当のサブエージェントを作る","役割・使ってよいツール・報告形式を指定","『競合3社を調べて表で報告』と依頼","本体の会話が汚れていないことを確認"]}
+],
+3:[
+ {h:"課題1：Hooks で『保存したら必ず実行』を仕込む",why:"指示は7割しか守られませんが、Hooks は10割動きます。",
+  s:["守らせたいルールを1つ決める（整形・禁止コマンド遮断など）","settings.json に該当イベントの hook を登録","わざと違反する操作をして、確実に止まるか検証","チームの settings に取り込む"]},
+ {h:"課題2：毎朝の定型レポートを無人で生成する",why:"人が起動している限り、それは自動化ではありません。",
+  s:["入力元（Sheets／メール）と出力先を決める","手動で1回、完全な成果物を作らせる","その手順を Skill 化して固定","cron または GAS のトリガーで定時実行","失敗時の通知先を必ず設定する"]},
+ {h:"課題3：Codex CLI・Gemini CLI と同じ課題を解かせ比較する",why:"1社に依存しない判断基準は、それ自体が売り物になります。",
+  s:["同一の課題文と同一のフォルダを用意","Claude Code / Codex CLI / Gemini CLI で各1回実行","所要時間・修正回数・破壊的操作の有無を記録","表にまとめ、業務別の使い分け基準を1枚に"]}
+],
+4:[
+ {h:"課題1：Plugin としてパッケージ化し配布する",why:"個人技を組織の標準にできるかが、次の分岐点です。",
+  s:["Skills・Hooks・サブエージェント・MCP設定を1つに束ねる","README に導入手順と前提条件を明記","別のマシンでクリーンインストール検証","社内マーケットプレイスまたは Git で配布"]},
+ {h:"課題2：エージェント運用設計書を作る",why:"権限と戻し方を決めていない自動化は、事故の待機列です。",
+  s:["各エージェントの権限範囲を明文化","破壊的操作の承認フローを定義","失敗時のロールバック手順を記述","ログの保存先と監査方法を決める"]},
+ {h:"課題3：有償プロダクト化して課金導線を通す",why:"1円でも課金されると、フィードバックの質が変わります。",
+  s:["最小機能を1つに絞って切り出す","決済（Stripe 等）を1本つなぐ","利用ログを計測し、離脱点を特定","価格を1回改定してみる"]}
+]
+};
+
+/* ---------- 状態 ---------- */
+let idx = 0;
+const ansK = new Array(10).fill(null);
+const ansD = new Array(10).fill(null);
+let phase = "pre", role = "企画営業", pid = "";
+
+/* ---------- ユーティリティ ---------- */
+const $ = id => document.getElementById(id);
+function stampStr(){
+  const d = new Date();
+  const w = ["SUN","MON","TUE","WED","THU","FRI","SAT"][d.getDay()];
+  const p = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${w}`;
+}
+$("stamp").textContent = stampStr();
+
+function bindPills(rowId, cb){
+  const row = $(rowId);
+  row.querySelectorAll(".pill").forEach(b=>{
+    b.onclick = ()=>{
+      row.querySelectorAll(".pill").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); cb(b.dataset.v);
+    };
+  });
+}
+bindPills("phaseRow", v => phase = v);
+bindPills("roleRow",  v => role  = v);
+
+/* ---------- 画面遷移 ---------- */
+$("btnStart").onclick = ()=>{
+  pid = $("pid").value.trim() || ("N" + Math.floor(Math.random()*9000+1000));
+  $("scStart").classList.add("hide");
+  $("scQuiz").classList.remove("hide");
+  render();
+};
+
+function render(){
+  const q = QUESTIONS[idx];
+  $("qMeta").textContent  = `Q${idx+1} / 10 ・ ${q.ax}`;
+  $("qTitle").textContent = q.t;
+  $("qDesc").textContent  = q.d;
+  $("progBar").style.width = ((idx)/10*100) + "%";
+
+  const build = (host, labels, arr, isK)=>{
+    host.innerHTML = "";
+    labels.forEach((lb,i)=>{
+      const b = document.createElement("button");
+      b.className = "opt" + (arr[idx]===i ? " on" : "");
+      b.textContent = `${i}　${lb}`;
+      b.onclick = ()=>{ (isK?ansK:ansD)[idx] = i; render(); };
+      host.appendChild(b);
+    });
+  };
+  build($("optK"), KLABEL, ansK, true);
+  build($("optD"), DLABEL, ansD, false);
+
+  $("btnNext").disabled = (ansK[idx]===null || ansD[idx]===null);
+  $("btnNext").textContent = (idx===9) ? "結果を見る" : "次へ";
+  $("btnPrev").disabled = (idx===0);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("btnNext").onclick = ()=>{
+  if(idx < 9){ idx++; render(); } else { showResult(); }
+};
+$("btnPrev").onclick = ()=>{ if(idx>0){ idx--; render(); } };
+
+/* ---------- 結果 ---------- */
+let payload = null;
+
+function showResult(){
+  const K = ansK.reduce((a,b)=>a+b,0);
+  const D = ansD.reduce((a,b)=>a+b,0);
+  const T = K + D;
+  const gap = K - D;
+  const L = LEVELS.find(l => T>=l.min && T<=l.max);
+
+  $("scQuiz").classList.add("hide");
+  $("scResult").classList.remove("hide");
+  $("resLv").textContent     = "LV." + L.lv;
+  $("resLvName").textContent = L.name;
+  $("resScore").textContent  = `総合 ${T} / 60 点`;
+  $("kpiK").textContent = K;
+  $("kpiD").textContent = D;
+  $("kpiG").textContent = (gap>0?"+":"") + gap;
+
+  let type, typeMsg;
+  if(gap >= 6){ type="評論家型";
+    typeMsg="<b>評論家型</b>：知識が実践を大きく上回っています。情報収集は十分なので、今日中に1つ手を動かすだけでレベルが1段上がります。読む時間を半分にして、その分を実行に回してください。"; }
+  else if(gap <= -6){ type="職人型";
+    typeMsg="<b>職人型</b>：手は動くが、言語化と再現性が弱い状態です。やった手順を文章化し CLAUDE.md や Skill に落とすと、成果が他人に渡せる資産に変わります。"; }
+  else { type="バランス型";
+    typeMsg="<b>バランス型</b>：知識と実践が噛み合っています。この型は伸びが速いので、難易度を一段上げた課題に進んで構いません。"; }
+  $("typeBox").innerHTML = typeMsg + "<br><br>" + L.msg;
+
+  const list = $("taskList"); list.innerHTML = "";
+  TASKS[L.lv].forEach(t=>{
+    const d = document.createElement("div");
+    d.className = "task";
+    d.innerHTML = `<h4>${t.h}</h4><div class="why">なぜ：${t.why}</div><ol>${t.s.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+    list.appendChild(d);
+  });
+
+  drawRadar();
+
+  payload = {
+    ts: new Date().toISOString(), stamp: stampStr(), pid, phase, role,
+    k: ansK.slice(), d: ansD.slice(),
+    kTotal:K, dTotal:D, total:T, gap, level:L.lv, levelName:L.name, type
+  };
+  $("tsvBox").value = toTSV(payload);
+  $("progBar").style.width = "100%";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function toTSV(p){
+  return [p.stamp,p.pid,p.phase,p.role,...p.k,...p.d,
+          p.kTotal,p.dTotal,p.total,p.gap,p.level,p.levelName,p.type].join("\t");
+}
+
+/* ---------- レーダー ---------- */
+function drawRadar(){
+  const cx=160, cy=150, R=105, n=10;
+  const pt=(i,v)=>{
+    const a = -Math.PI/2 + i*2*Math.PI/n, r = R*(v/3);
+    return [cx+r*Math.cos(a), cy+r*Math.sin(a)];
+  };
+  let s="";
+  for(let g=1; g<=3; g++){
+    const p=[]; for(let i=0;i<n;i++) p.push(pt(i,g).join(","));
+    s += `<polygon points="${p.join(" ")}" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  for(let i=0;i<n;i++){
+    const e = pt(i,3);
+    s += `<line x1="${cx}" y1="${cy}" x2="${e[0]}" y2="${e[1]}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
+    const l = pt(i,3.52);
+    s += `<text x="${l[0]}" y="${l[1]}" font-size="8.5" fill="rgba(255,255,255,0.8)" text-anchor="middle" dominant-baseline="middle">${QUESTIONS[i].ax}</text>`;
+  }
+  const poly=(arr,fill,stroke)=>{
+    const p=[]; for(let i=0;i<n;i++) p.push(pt(i,arr[i]).join(","));
+    return `<polygon points="${p.join(" ")}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+  };
+  s += poly(ansK,"rgba(255,255,255,0.22)","rgba(255,255,255,0.9)");
+  s += poly(ansD,"rgba(255,217,236,0.28)","#ffd9ec");
+  $("radar").innerHTML = s;
+}
+
+/* ---------- 送信・書き出し ---------- */
+$("btnSend").onclick = async ()=>{
+  const st = $("sendStatus");
+  if(!GAS_URL){ st.textContent = "送信先が未設定です。『1行コピー』をお使いください。"; return; }
+  st.textContent = "送信中...";
+  try{
+    await fetch(GAS_URL, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify(payload)
+    });
+    st.textContent = "送信しました（受講番号 " + payload.pid + "）";
+    $("btnSend").disabled = true;
+  }catch(e){
+    st.textContent = "送信に失敗しました。『1行コピー』をお使いください。";
+  }
+};
+
+$("btnCopy").onclick = ()=>{
+  const t = $("tsvBox"); t.select(); t.setSelectionRange(0,99999);
+  try{ document.execCommand("copy"); $("sendStatus").textContent = "コピーしました。シートに貼り付けてください。"; }
+  catch(e){ $("sendStatus").textContent = "下の枠を選択してコピーしてください。"; }
+};
+
+$("btnCsv").onclick = ()=>{
+  const head = ["date","pid","phase","role",
+    ...QUESTIONS.map((q,i)=>`K${i+1}_${q.ax}`),
+    ...QUESTIONS.map((q,i)=>`D${i+1}_${q.ax}`),
+    "knowledge","practice","total","gap","level","levelName","type"].join(",");
+  const row = toTSV(payload).split("\t").join(",");
+  const blob = new Blob(["\uFEFF"+head+"\n"+row], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `cc-check_${payload.pid}_${payload.phase}.csv`;
+  a.click();
+};
+
+$("btnRetry").onclick = ()=>{
+  idx=0; ansK.fill(null); ansD.fill(null);
+  $("scResult").classList.add("hide");
+  $("scStart").classList.remove("hide");
+  $("btnSend").disabled = false; $("sendStatus").textContent = "";
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+</script>
+</body>
+</html>

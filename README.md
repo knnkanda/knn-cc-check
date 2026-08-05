@@ -51,7 +51,7 @@ Claude Code と AI 駆動開発の習熟度を『知識』と『実践』の2軸
 ビルド不要です。ファイルをブラウザで開くだけで動きます。
 
 ```bash
-git clone https://github.com/paulkanda/knn-cc-check.git
+git clone https://github.com/knnkanda/knn-cc-check.git
 cd knn-cc-check
 open index.html
 ```
